@@ -1,6 +1,7 @@
 # from django.shortcuts import render
 
 # Create your views here.
+from django.db.models import Count, Case, When
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -14,7 +15,8 @@ from store.serializers import BooksSerializer, UserBookRelationSerializer
 
 
 class BookViewSet(ModelViewSet):
-    queryset = Book.objects.all()
+    queryset = Book.objects.all().annotate(
+            annotatated_likes=Count(Case(When(userbookrelation__like=True, then=1))))
     serializer_class = BooksSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     permission_classes = [IsOwnerOrStaffOrReadOnly]
@@ -39,7 +41,7 @@ class UserBookRelationViewSet(UpdateModelMixin,
         Переназначили метод получения таким образом:
             -   Если такой связи нет (связка книга и юзер), 
         то она создается. 
-            -   Если связь есть , то изменяется 
+            -   Если связь есть , то изменяется
     '''
     def get_object(self):
         obj, created = UserBookRelation.objects.get_or_create(user=self.request.user,
